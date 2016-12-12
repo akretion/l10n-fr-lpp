@@ -6,6 +6,18 @@
 
 <odoo>
 
+<record id="product_template_form_view" model="ir.ui.view">
+    <field name="name">lpp.code.product.template.form</field>
+    <field name="model">product.template</field>
+    <field name="priority">5</field> <!-- so that it is displayed on product.product form too -->
+    <field name="inherit_id" ref="product.product_template_form_view"/>
+    <field name="arch" type="xml">
+        <group name="group_standard_price" position="inside">
+            <field name="lpp_code_id"/>
+        </group>
+    </field>
+</record>
+ 
 <record id="product_template_search_view" model="ir.ui.view">
     <field name="name">lpp.code.product.template.search</field>
     <field name="model">product.template</field>
