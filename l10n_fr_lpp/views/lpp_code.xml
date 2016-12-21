@@ -44,10 +44,16 @@
                 </button>
             </div>
             <group name="main">
-                <field name="code"/>
-                <field name="name"/>
-                <field name="tax_included_price"/>
-                <field name="currency_id" invisible="1"/>
+                <group name="left">
+                    <field name="code"/>
+                    <field name="name"/>
+                    <field name="tax_included_price"/>
+                    <field name="currency_id" invisible="1"/>
+                </group>
+                <group name="right">
+                    <field name="code128" groups="base.group_system"/>
+                    <field name="code128_barcode" widget="image" groups="base.group_system"/>
+                </group>
             </group>
             <group name="products" string="Products">
                 <field name="product_tmpl_ids" nolabel="1" readonly="1"/>
