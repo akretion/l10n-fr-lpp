@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  © 2016 Akretion (Alexis de Lattre <alexis.delattre@akretion.com>)
+  License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+-->
+<odoo>
+
+<record id="view_account_config_settings" model="ir.ui.view">
+    <field name="name">l10n_fr_lpp.account_config_settings.form</field>
+    <field name="model">account.config.settings</field>
+    <field name="inherit_id" ref="account.view_account_config_settings"/>
+    <field name="arch" type="xml">
+        <group name="followup" position="after">
+            <group name="LPP" string="LPP">
+                <field name="lpp_sale_tax_id"/>
+            </group>
+        </group>
+    </field>
+</record>
+
+
+</odoo>

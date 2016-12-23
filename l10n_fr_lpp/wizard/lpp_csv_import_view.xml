@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  © 2016 Akretion France (www.akretion.com)
+  @author: Alexis de Lattre <alexis.delattre@akretion.com>
+  License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+-->
+
+<odoo>
+
+
+<record id="lpp_csv_import_form" model="ir.ui.view">
+    <field name="name">lpp_csv_import.form</field>
+    <field name="model">lpp.csv.import</field>
+    <field name="arch"  type="xml">
+        <form string="Import LPP CSV File with Prices">
+            <p class="oe_grey">
+                The CSV file should be formatted as follows:
+                  <ul>
+                  <li>Field Separator: semi-colon</li>
+                  <li>Header line: optional</li>
+                  <li>Decimal separator: coma</li>
+                  <li>Thousands separator: none</li>
+                  <li>First column: LPP code</li>
+                  <li>Second column: Price with taxes</li>
+                  </ul>
+            </p>
+            <group name="main">
+                <field name="csv_file" filename="filename"/>
+                <field name="filename" invisible="1"/>
+                <field name="update_product"/>
+            </group>
+            <footer>
+                <button type="object" name="run" string="Import CSV" class="oe_highlight"/>
+                <button special="cancel" string="Cancel" class="oe_link"/>
+            </footer>
+        </form>
+    </field>
+</record>
+
+<record id="lpp_csv_import_action" model="ir.actions.act_window">
+    <field name="name">Import LPP Prices File</field>
+    <field name="res_model">lpp.csv.import</field>
+    <field name="view_mode">form</field>
+    <field name="target">new</field>
+</record>
+
+<menuitem id="lpp_csv_import_menu" action="lpp_csv_import_action" parent="sale.prod_config_main" sequence="105"/>
+
+</odoo>

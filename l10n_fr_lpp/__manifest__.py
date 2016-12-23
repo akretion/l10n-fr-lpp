@@ -13,11 +13,14 @@
     'license': 'AGPL-3',
     'depends': ['sale'],
     # only needed for menu entry ; should only depend on 'product'
-    'external_dependencies': {'python': ['candybar']},
+    'external_dependencies': {'python': ['candybar', 'unicodecsv']},
     'data': [
         'security/ir.model.access.csv',
         'views/lpp_code.xml',
         'views/product.xml',
+        'views/account_config_settings_view.xml',
+        'wizard/lpp_update_product_price_view.xml',
+        'wizard/lpp_csv_import_view.xml',
         'data/lpp.code.csv',
     ],
     'installable': True,

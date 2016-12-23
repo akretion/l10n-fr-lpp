@@ -3,8 +3,12 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 from odoo import models, fields, api, _
-from odoo.exceptions import ValidationError
+from odoo.exceptions import ValidationError, UserError, RedirectWarning
+from odoo.tools import float_round
 from candybar import CandyBarCode128
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class LppCode(models.Model):
@@ -87,8 +91,67 @@ class LppCode(models.Model):
             img = candybarcode.generate_barcode()
             lpp.code128_barcode = img.encode('base64')
 
-    _sql_constraints = [(
-        'unique_code',
-        'unique(code)',
-        'This LPP code already exists',
+    _sql_constraints = [
+        (
+            'unique_code',
+            'unique(code)',
+            'This LPP code already exists',
+        ),
+        (
+            'tax_included_price_positive',
+            'CHECK (tax_included_price >= 0)',
+            "The value of the field 'Tax included price' must be positive or 0"
         )]
+
+    @api.multi
+    def update_product_price(self):
+        company = self.env.user.company_id
+        if not company.lpp_sale_tax_id:
+            action = self.env.ref('account.action_account_config')
+            msg = _(
+                "Missing 'Sale Tax on Products with LPP' on company '%s'. "
+                "Please go to Account Configuration.") % company.name
+            raise RedirectWarning(
+                msg, action.id, _('Go to the configuration panel'))
+        lpp_sale_tax = company.lpp_sale_tax_id
+        price_include = lpp_sale_tax.price_include
+        assert lpp_sale_tax.amount_type == 'percent'
+        for lpp in self:
+            if lpp.tax_included_price < 0.01:
+                msg = _(
+                    "Cannot update price for LPP %s because its price (%s) "
+                    "is < 0.01") % (lpp.code, lpp.tax_included_price)
+                if self._context.get('mass_update'):
+                    logger.warning(msg)
+                    continue
+                else:
+                    raise UserError(msg)
+            if lpp.product_tmpl_ids:
+                for pt in lpp.product_tmpl_ids:
+                    if not pt.taxes_id:
+                        raise UserError(_(
+                            "Missing Sale Taxe on product '%s'.")
+                            % pt.name_get()[0][1])
+                    if pt.taxes_id[0] != lpp_sale_tax:
+                        raise UserError(_(
+                            "On product '%s', the Sale Tax is '%s'. It should "
+                            "have the LPP Sale Tax of the company i.e. '%s'.")
+                            % (pt.name_get()[0][1], pt.taxes_id[0].name,
+                               lpp_sale_tax.name))
+
+                if price_include:
+                    price = lpp.tax_included_price
+                else:
+                    # There are no methods in Odoo to compute HT from TTC using
+                    # a tax-exclude tax
+                    raw_price = lpp.tax_included_price * 100.0 / \
+                        (100.0 + lpp_sale_tax.amount)
+                    price = float_round(
+                        raw_price,
+                        precision_rounding=company.currency_id.rounding)
+                lpp.product_tmpl_ids.write(
+                    {'list_price': price})
+                logger.info(
+                    'Price updated to %s for %d products with LPP %s',
+                    price, len(lpp.product_tmpl_ids), lpp.code)
+        return True

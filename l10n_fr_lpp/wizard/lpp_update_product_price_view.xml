@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  © 2016 Akretion France (www.akretion.com)
+  @author: Alexis de Lattre <alexis.delattre@akretion.com>
+  License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+-->
+
+<odoo>
+
+
+<record id="lpp_update_product_price_form" model="ir.ui.view">
+    <field name="name">lpp_update_product_price.form</field>
+    <field name="model">lpp.update.product.price</field>
+    <field name="arch"  type="xml">
+        <form string="Update Products Prices from LPP Price">
+            <p class="oe_grey">
+                For each selected LPP, this wizard will update the sale price from the LPP price for the related products.
+            </p>
+            <footer>
+                <button type="object" name="run" string="Update Product Prices" class="oe_highlight"/>
+                <button special="cancel" string="Cancel" class="oe_link"/>
+            </footer>
+        </form>
+    </field>
+</record>
+
+<act_window id="lpp_update_product_price_action"
+            multi="True"
+            key2="client_action_multi"
+            name="Update Product Prices"
+            res_model="lpp.update.product.price"
+            src_model="lpp.code"
+            view_mode="form"
+            target="new" />
+
+
+</odoo>
