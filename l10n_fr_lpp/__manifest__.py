@@ -18,6 +18,7 @@
         'security/ir.model.access.csv',
         'views/lpp_code.xml',
         'views/product.xml',
+        'views/account_invoice_report.xml',
         'views/account_config_settings_view.xml',
         'wizard/lpp_update_product_price_view.xml',
         'wizard/lpp_csv_import_view.xml',

@@ -38,13 +38,11 @@ class LppCode(models.Model):
         compute='_compute_code128_barcode', readonly=True,
         string='Code128 Barcode')
 
-    @api.multi
     @api.depends('code', 'name')
     def compute_display_name_field(self):
         for lpp in self:
             lpp.display_name = u'[%s] %s' % (lpp.code, lpp.name)
 
-    @api.multi
     @api.constrains('code')
     def check_code(self):
         for lpp in self:
@@ -53,7 +51,6 @@ class LppCode(models.Model):
                     "The LPP code '%s' should only contain digits!")
                     % lpp.code)
 
-    @api.multi
     def compute_currency_id(self):
         eur_id = self.env.ref('base.EUR').id
         for lpp in self:
@@ -73,7 +70,6 @@ class LppCode(models.Model):
         checksum = unichr(remainder + 32)
         return checksum
 
-    @api.multi
     @api.depends('code')
     def _compute_code128(self):
         for lpp in self:
@@ -83,7 +79,6 @@ class LppCode(models.Model):
             checksum = self._compute_code128_checksum(code)
             lpp.code128 = startb + code + checksum + stop
 
-    @api.multi
     @api.depends('code')
     def _compute_code128_barcode(self):
         for lpp in self:
@@ -103,7 +98,6 @@ class LppCode(models.Model):
             "The value of the field 'Tax included price' must be positive or 0"
         )]
 
-    @api.multi
     def update_product_price(self):
         company = self.env.user.company_id
         if not company.lpp_sale_tax_id:
@@ -130,13 +124,13 @@ class LppCode(models.Model):
                 for pt in lpp.product_tmpl_ids:
                     if not pt.taxes_id:
                         raise UserError(_(
-                            "Missing Sale Taxe on product '%s'.")
-                            % pt.name_get()[0][1])
+                            "Missing Sale Tax on product '%s'.")
+                            % pt.display_name)
                     if pt.taxes_id[0] != lpp_sale_tax:
                         raise UserError(_(
                             "On product '%s', the Sale Tax is '%s'. It should "
                             "have the LPP Sale Tax of the company i.e. '%s'.")
-                            % (pt.name_get()[0][1], pt.taxes_id[0].name,
+                            % (pt.display_name, pt.taxes_id[0].name,
                                lpp_sale_tax.name))
 
                 if price_include:
