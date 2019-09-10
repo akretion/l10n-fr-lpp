@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-# © 2014-2016 Akretion (Alexis de Lattre <alexis.delattre@akretion.com>)
+# Copyright 2014-2019 Akretion France (http://www.akretion.com/)
+# @author: Alexis de Lattre <alexis.delattre@akretion.com>
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 from odoo import models, fields, api, _
@@ -143,9 +144,11 @@ class LppCode(models.Model):
                     price = float_round(
                         raw_price,
                         precision_rounding=company.currency_id.rounding)
-                lpp.product_tmpl_ids.write(
-                    {'list_price': price})
-                logger.info(
-                    'Price updated to %s for %d products with LPP %s',
-                    price, len(lpp.product_tmpl_ids), lpp.code)
+                for pt in lpp.product_tmpl_ids:
+                    list_price = pt.lpp_factor * price
+                    pt.list_price = list_price
+                    logger.info(
+                        'Price updated to %s for product %s '
+                        'with LPP %s factor %d',
+                        list_price, pt.display_name, lpp.code, pt.lpp_factor)
         return True

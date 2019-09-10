@@ -14,6 +14,7 @@
     <field name="arch" type="xml">
         <group name="group_standard_price" position="inside">
             <field name="lpp_code_id"/>
+            <field name="lpp_factor" attrs="{'invisible': [('lpp_code_id', '=', False)]}"/>
         </group>
     </field>
 </record>

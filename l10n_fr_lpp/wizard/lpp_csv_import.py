@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-# © 2014-2016 Barroux Abbey (http://www.barroux.org)
-# © 2014-2016 Akretion France (Alexis de Lattre <alexis.delattre@akretion.com>)
+# Copyright 2014-2019 Akretion France (http://www.akretion.com/)
+# @author: Alexis de Lattre <alexis.delattre@akretion.com>
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from odoo import models, fields, api
+from odoo import models, fields
 from tempfile import TemporaryFile
 import unicodecsv
 import logging
@@ -20,7 +20,6 @@ class LppCsvImport(models.TransientModel):
     update_product = fields.Boolean(
         string='Also Update Product Prices', default=True)
 
-    @api.multi
     def run(self):
         self.ensure_one()
         fileobj = TemporaryFile('w+')
@@ -60,7 +59,7 @@ class LppCsvImport(models.TransientModel):
             price = False
             try:
                 price = float(row[1].replace(',', '.'))
-            except:
+            except Exception:
                 logger.warning(
                     'Could not parse price %s of LPP %s', row[1], row[0])
                 continue
