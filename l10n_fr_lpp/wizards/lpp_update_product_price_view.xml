@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Copyright 2016-2022 Akretion France (www.akretion.com)
+  @author: Alexis de Lattre <alexis.delattre@akretion.com>
+  License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+-->
+
+<odoo>
+
+
+<record id="lpp_update_product_price_form" model="ir.ui.view">
+    <field name="name">lpp_update_product_price.form</field>
+    <field name="model">lpp.update.product.price</field>
+    <field name="arch"  type="xml">
+        <form string="Update Products Prices from LPP Price">
+            <p>
+                For each selected LPP, this wizard will update the sale price from the LPP price for the related products.
+            </p>
+            <footer>
+                <button type="object" name="run" string="Update Product Prices" class="btn-primary"/>
+                <button special="cancel" string="Cancel"/>
+            </footer>
+        </form>
+    </field>
+</record>
+
+<record id="lpp_update_product_price_action" model="ir.actions.act_window">
+    <field name="name">Update Product Prices</field>
+    <field name="res_model">lpp.update.product.price</field>
+    <field name="view_mode">form</field>
+    <field name="view_id" ref="lpp_update_product_price_form"/>
+    <field name="context">{}</field>
+    <field name="target">new</field>
+    <field name="binding_model_id" ref="l10n_fr_lpp.model_lpp_code" />
+    <field name="binding_view_types">list</field>
+</record>
+
+
+</odoo>

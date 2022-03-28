@@ -2,3 +2,5 @@ id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_lpp_code_read,Read access to lpp.code to employees,model_lpp_code,base.group_user,1,0,0,0
 access_lpp_code_full_system,Full access to lpp.code to System user,model_lpp_code,base.group_system,1,1,1,1
 access_lpp_code_full_sale,Full access to lpp.code to Sales Manager,model_lpp_code,sales_team.group_sale_manager,1,1,1,1
+access_lpp_update_product_price,Full access on lpp_update_product_price wizard,model_lpp_update_product_price,sales_team.group_sale_manager,1,1,1,1
+access_lpp_csv_import,access_lpp_csv_import,model_lpp_csv_import,sales_team.group_sale_manager,1,1,1,1

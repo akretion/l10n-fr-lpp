@@ -1,10 +1,10 @@
-# -*- coding: utf-8 -*-
-# Copyright 2014-2019 Akretion France (http://www.akretion.com/)
+# Copyright 2014-2022 Akretion France (http://www.akretion.com/)
 # @author: Alexis de Lattre <alexis.delattre@akretion.com>
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 from odoo import models, fields
 from tempfile import TemporaryFile
+import base64
 import unicodecsv
 import logging
 
@@ -17,13 +17,12 @@ class LppCsvImport(models.TransientModel):
 
     csv_file = fields.Binary(string='CSV File', required=True)
     filename = fields.Char(string='Filename')
-    update_product = fields.Boolean(
-        string='Also Update Product Prices', default=True)
+    update_product = fields.Boolean(string='Also Update Product Prices', default=True)
 
     def run(self):
         self.ensure_one()
-        fileobj = TemporaryFile('w+')
-        fileobj.write(self.csv_file.decode('base64'))
+        fileobj = TemporaryFile('wb')
+        fileobj.write(base64.b64decode(self.csv_file))
         fileobj.seek(0)
         reader = unicodecsv.reader(
             fileobj,
@@ -32,8 +31,7 @@ class LppCsvImport(models.TransientModel):
             encoding='latin1')
         i = 0
         lppcode2obj = {}
-        lpps = self.env['lpp.code'].search(
-            ['|', ('active', '=', True), ('active', '=', False)])
+        lpps = self.env['lpp.code'].with_context(active_test=False).search([])
         for lpp in lpps:
             lppcode2obj[lpp.code] = lpp
         update_product = self.update_product
@@ -68,7 +66,7 @@ class LppCsvImport(models.TransientModel):
                     'Wrong price %s on LPP %s', row[1], row[0])
                 continue
             old_price = lpp.tax_included_price
-            lpp.tax_included_price = price
+            lpp.write({'tax_included_price': price})
             logger.info(
                 'LPP %s (ID %d) updated from price %s to price %s',
                 row[0], lpp.id, old_price, price)

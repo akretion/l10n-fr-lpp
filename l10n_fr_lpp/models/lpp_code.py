@@ -1,12 +1,13 @@
-# -*- coding: utf-8 -*-
-# Copyright 2014-2019 Akretion France (http://www.akretion.com/)
+# Copyright 2014-2022 Akretion France (http://www.akretion.com/)
 # @author: Alexis de Lattre <alexis.delattre@akretion.com>
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 from odoo import models, fields, api, _
 from odoo.exceptions import ValidationError, UserError, RedirectWarning
-from odoo.tools import float_round
+from odoo.tools import float_round, float_compare
 from candybar import CandyBarCode128
+from textwrap import shorten
+import base64
 import logging
 
 logger = logging.getLogger(__name__)
@@ -20,14 +21,10 @@ class LppCode(models.Model):
 
     code = fields.Char('LPP Code', required=True, size=7)
     name = fields.Char('LPP Label', required=True)
-    tax_included_price = fields.Monetary('Tax included price')
     # Historize price ?
     currency_id = fields.Many2one(
-        'res.currency', string='Currency', compute='compute_currency_id',
-        readonly=True, store=True)
-    display_name = fields.Char(
-        compute='compute_display_name_field',
-        readonly=True, store=True)
+        'res.currency', string='Currency', compute='_compute_currency_id', store=True)
+    tax_included_price = fields.Monetary('Tax included price', currency_field='currency_id')
     product_tmpl_ids = fields.One2many(
         'product.template', 'lpp_code_id', string='Products', readonly=True)
     active = fields.Boolean(default=True)
@@ -40,19 +37,32 @@ class LppCode(models.Model):
         string='Code128 Barcode')
 
     @api.depends('code', 'name')
-    def compute_display_name_field(self):
+    def name_get(self):
+        res = []
         for lpp in self:
-            lpp.display_name = u'[%s] %s' % (lpp.code, lpp.name)
+            lpp_name = shorten(lpp.name, 40, placeholder='...')
+            res.append((lpp.id, '[%s] %s' % (lpp.code, lpp_name)))
+        return res
+
+    @api.model
+    def name_search(self, name='', args=None, operator='ilike', limit=100):
+        if args is None:
+            args = []
+        if name and operator == 'ilike':
+            recs = self.search([('code', '=ilike', name + '%')] + args, limit=limit)
+            if recs:
+                return recs.name_get()
+        return super().name_search(name=name, args=args, operator=operator, limit=limit)
 
     @api.constrains('code')
     def check_code(self):
         for lpp in self:
             if not lpp.code.isdigit():
                 raise ValidationError(_(
-                    "The LPP code '%s' should only contain digits!")
-                    % lpp.code)
+                    "The LPP code '%s' should only contain digits!") % lpp.code)
 
-    def compute_currency_id(self):
+    @api.depends('code')  # it seems we need to have one, otherwise it is never computed
+    def _compute_currency_id(self):
         eur_id = self.env.ref('base.EUR').id
         for lpp in self:
             lpp.currency_id = eur_id
@@ -68,24 +78,30 @@ class LppCode(models.Model):
             char_val = ord(char) - 32
             csum += char_val * i
         remainder = csum % 103
-        checksum = unichr(remainder + 32)
+        checksum = chr(remainder + 32)
         return checksum
 
     @api.depends('code')
     def _compute_code128(self):
         for lpp in self:
             code = lpp.code
-            startb = unichr(209)
-            stop = unichr(211)
-            checksum = self._compute_code128_checksum(code)
-            lpp.code128 = startb + code + checksum + stop
+            code128 = False
+            if code:
+                startb = chr(209)
+                stop = chr(211)
+                checksum = self._compute_code128_checksum(code)
+                code128 = startb + code + checksum + stop
+            lpp.code128 = code128
 
     @api.depends('code')
     def _compute_code128_barcode(self):
         for lpp in self:
-            candybarcode = CandyBarCode128.CandyBar128(contents=lpp.code)
-            img = candybarcode.generate_barcode()
-            lpp.code128_barcode = img.encode('base64')
+            code128_barcode = False
+            if lpp.code:
+                candybarcode = CandyBarCode128.CandyBar128(contents=lpp.code)
+                img = candybarcode.generate_barcode()
+                code128_barcode = base64.b64encode(img)
+            lpp.code128_barcode = code128_barcode
 
     _sql_constraints = [
         (
@@ -100,16 +116,18 @@ class LppCode(models.Model):
         )]
 
     def update_product_price(self):
-        company = self.env.user.company_id
+        company = self.env.company
+        ccur = company.currency_id
         if not company.lpp_sale_tax_id:
             action = self.env.ref('account.action_account_config')
             msg = _(
                 "Missing 'Sale Tax on Products with LPP' on company '%s'. "
-                "Please go to Account Configuration.") % company.name
+                "Please go to Account Configuration.") % company.display_name
             raise RedirectWarning(
                 msg, action.id, _('Go to the configuration panel'))
         lpp_sale_tax = company.lpp_sale_tax_id
         price_include = lpp_sale_tax.price_include
+        prec = self.env['decimal.precision'].precision_get('Product Price')
         assert lpp_sale_tax.amount_type == 'percent'
         for lpp in self:
             if lpp.tax_included_price < 0.01:
@@ -141,14 +159,15 @@ class LppCode(models.Model):
                     # a tax-exclude tax
                     raw_price = lpp.tax_included_price * 100.0 / \
                         (100.0 + lpp_sale_tax.amount)
-                    price = float_round(
-                        raw_price,
-                        precision_rounding=company.currency_id.rounding)
+                    price = ccur.round(raw_price)
                 for pt in lpp.product_tmpl_ids:
                     list_price = pt.lpp_factor * price
-                    pt.list_price = list_price
-                    logger.info(
-                        'Price updated to %s for product %s '
-                        'with LPP %s factor %d',
-                        list_price, pt.display_name, lpp.code, pt.lpp_factor)
-        return True
+                    if float_compare(list_price, pt.list_price, precision_digits=prec):
+                        pt.write({'list_price': list_price})
+                        pt.message_post(body=_("Sales price updated via the LPP product price update wizard."))
+                        logger.info(
+                            'Price updated to %s for product %s '
+                            'with LPP %s factor %d',
+                            list_price, pt.display_name, lpp.code, pt.lpp_factor)
+                    else:
+                        logger.info('Price of product %s with LPP %s factor %d is unchanged (%s)', pt.display_name, lpp.code, pt.lpp_factor, list_price)

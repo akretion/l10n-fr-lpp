@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Copyright 2016-2022 Akretion (Alexis de Lattre <alexis.delattre@akretion.com>)
+  License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+-->
+<odoo>
+
+<record id="res_config_settings_view_form" model="ir.ui.view">
+    <field name="name">l10n_fr_lpp.res_config_settings.form</field>
+    <field name="model">res.config.settings</field>
+    <field name="inherit_id" ref="account.res_config_settings_view_form"/>
+    <field name="arch" type="xml">
+        <div id="default_taxes" position="after">
+            <div id="lpp_sale_tax" class="col-12 col-lg-6 o_setting_box">
+                <div class="o_setting_left_pane"/>
+                <div class="o_setting_right_pane">
+                    <span class="o_form_label">LPP Products</span>
+                    <div class="content-group">
+                        <div class="row mt16">
+                            <label for="lpp_sale_tax_id" class="col-lg-3 o_light_label"/>
+                            <field name="lpp_sale_tax_id"/>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </field>
+</record>
+
+
+</odoo>
