@@ -21,8 +21,8 @@ class LppCsvImport(models.TransientModel):
 
     def run(self):
         self.ensure_one()
-        fileobj = TemporaryFile('wb')
-        fileobj.write(base64.b64decode(self.csv_file))
+        fileobj = TemporaryFile('wb+')
+        fileobj.write(base64.decodebytes(self.csv_file))
         fileobj.seek(0)
         reader = unicodecsv.reader(
             fileobj,
